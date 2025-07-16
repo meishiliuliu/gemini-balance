@@ -29,7 +29,7 @@ from app.log.logger import Logger
 
 class Settings(BaseSettings):
     # 数据库配置
-    DATABASE_TYPE: str = "mysql"  # sqlite 或 mysql
+    DATABASE_TYPE: str = "postgresql"  # sqlite, mysql 或 postgresql
     SQLITE_DATABASE: str = "default_db"
     MYSQL_HOST: str = ""
     MYSQL_PORT: int = 3306
@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     MYSQL_PASSWORD: str = ""
     MYSQL_DATABASE: str = ""
     MYSQL_SOCKET: str = ""
+    POSTGRES_HOST: str = ""
+    POSTGRES_PORT: int = 5432
+    POSTGRES_USER: str = ""
+    POSTGRES_PASSWORD: str = ""
+    POSTGRES_DATABASE: str = ""
 
     # 验证 MySQL 配置
     @field_validator(
@@ -46,8 +51,18 @@ class Settings(BaseSettings):
         if info.data.get("DATABASE_TYPE") == "mysql":
             if v is None or v == "":
                 raise ValueError(
-                    "MySQL configuration is required when DATABASE_TYPE is 'mysql'"
-                )
+                    "MySQL configuration is required when DATABASE_TYPE is 'mysql'")
+        return v
+
+    # 验证 PostgreSQL 配置
+    @field_validator(
+        "POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DATABASE"
+    )
+    def validate_postgresql_config(cls, v: Any, info: ValidationInfo) -> Any:
+        if info.data.get("DATABASE_TYPE") == "postgresql":
+            if v is None or v == "":
+                raise ValueError(
+                    "PostgreSQL configuration is required when DATABASE_TYPE is 'postgresql'")
         return v
 
     # API相关配置
@@ -123,6 +138,9 @@ class Settings(BaseSettings):
     AUTO_DELETE_REQUEST_LOGS_DAYS: int = 30
     SAFETY_SETTINGS: List[Dict[str, str]] = DEFAULT_SAFETY_SETTINGS
 
+
+    class Config:
+        env_file = [".env", "d:\\code工具\\github\\Neon\\neon_db.env"]
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -317,6 +335,20 @@ async def sync_initial_settings():
                     "This setting is controlled by environment/dotenv."
                 )
                 continue
+
+            # 强制从数据库更新 API_KEYS
+            if key == "API_KEYS":
+                target_type = Settings.__annotations__.get(key)
+                if target_type:
+                    try:
+                        parsed_db_value = _parse_db_value(key, db_value, target_type)
+                        setattr(settings, key, parsed_db_value)
+                        logger.info(f"Forcefully updated 'API_KEYS' from database: {parsed_db_value}")
+                        updated_in_memory = True
+                    except Exception as e:
+                        logger.error(f"Error processing database setting for key 'API_KEYS': {e}")
+                continue
+
             if hasattr(settings, key):
                 target_type = Settings.__annotations__.get(key)
                 if target_type:

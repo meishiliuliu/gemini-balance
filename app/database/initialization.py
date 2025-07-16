@@ -1,7 +1,7 @@
 """
 数据库初始化模块
 """
-from dotenv import dotenv_values
+import os
 
 from sqlalchemy import inspect
 from sqlalchemy.orm import Session
@@ -31,8 +31,8 @@ def import_env_to_settings():
     将.env文件中的配置项导入到t_settings表中
     """
     try:
-        # 获取.env文件中的所有配置项
-        env_values = dotenv_values(".env")
+        # 从系统环境变量获取配置项
+    env_values = dict(os.environ)
         
         # 获取检查器
         inspector = inspect(engine)
