@@ -20,13 +20,12 @@ if settings.DATABASE_TYPE == "sqlite":
     db_path = data_dir / settings.SQLITE_DATABASE
     DATABASE_URL = f"sqlite:///{db_path}"
 elif settings.DATABASE_TYPE == "mysql":
-
-elif settings.DATABASE_TYPE == "postgresql":
-    DATABASE_URL = f"postgresql+psycopg2://{settings.POSTGRES_USER}:{quote_plus(settings.POSTGRES_PASSWORD)}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DATABASE}?sslmode=require"
     if settings.MYSQL_SOCKET:
         DATABASE_URL = f"mysql+pymysql://{settings.MYSQL_USER}:{quote_plus(settings.MYSQL_PASSWORD)}@/{settings.MYSQL_DATABASE}?unix_socket={settings.MYSQL_SOCKET}"
     else:
         DATABASE_URL = f"mysql+pymysql://{settings.MYSQL_USER}:{quote_plus(settings.MYSQL_PASSWORD)}@{settings.MYSQL_HOST}:{settings.MYSQL_PORT}/{settings.MYSQL_DATABASE}"
+elif settings.DATABASE_TYPE == "postgresql":
+    DATABASE_URL = f"postgresql+psycopg2://{settings.POSTGRES_USER}:{quote_plus(settings.POSTGRES_PASSWORD)}@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DATABASE}?sslmode=require"
 else:
     raise ValueError("Unsupported database type. Please set DATABASE_TYPE to 'sqlite', 'mysql' or 'postgresql'.")
 
